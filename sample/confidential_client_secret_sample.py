@@ -36,14 +36,15 @@ import msal
 
 
 # Optional logging
-# logging.basicConfig(level=logging.DEBUG)  # Enable DEBUG log for entire script
-# logging.getLogger("msal").setLevel(logging.INFO)  # Optionally disable MSAL DEBUG logs
+logging.basicConfig(level=logging.DEBUG)  # Enable DEBUG log for entire script
+logging.getLogger("msal").setLevel(logging.INFO)  # Optionally disable MSAL DEBUG logs
 
 config = json.load(open(sys.argv[1]))
 
 # Create a preferably long-lived app instance which maintains a token cache.
 app = msal.ConfidentialClientApplication(
     config["client_id"], authority=config["authority"],
+    validate_authority=False,
     client_credential=config["secret"],
     # token_cache=...  # Default cache is in memory only.
                        # You can learn how to use SerializableTokenCache from
@@ -60,7 +61,9 @@ result = app.acquire_token_silent(config["scope"], account=None)
 
 if not result:
     logging.info("No suitable token exists in cache. Let's get a new one from AAD.")
-    result = app.acquire_token_for_client(scopes=config["scope"])
+    result = app.acquire_token_for_client(scopes=config["scope"], data={
+        "allowestsrnonmsi": "true",
+        })
 
 if "access_token" in result:
     # Calling graph using the access token
